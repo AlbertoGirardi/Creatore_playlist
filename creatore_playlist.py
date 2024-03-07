@@ -38,6 +38,7 @@ def create_log_file(output_folder, output_file, filenames, T0):
 
         log_file.write(f"\nVolume Change: {volume_change}\n")
         log_file.write(f"Total Length of Track: {round(sum([AudioSegment.from_file(os.path.join(output_folder, filename)).duration_seconds for filename in filenames]), 2)} seconds\n")
+        log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Time taken: {round(time.time()-T0,2)} seconds\n")
 
