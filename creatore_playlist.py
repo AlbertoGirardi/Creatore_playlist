@@ -36,11 +36,11 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write("Files added to the final track:\n")
         n = 0
         for filename in filenames:
-            log_file.write(f"- {filename} | {str(timedelta(seconds=timestamps[n]))}\n")
+            log_file.write(f"- {filename} | {str(timedelta(seconds=round(total_length)))}\n")
             n+=1
 
         log_file.write(f"\nVolume Change: {volume_change}\n")
-        log_file.write(f"Total Length of Track: {total_length} seconds\n")
+        log_file.write(f"Total Length of Track: {str(timedelta(seconds=round(total_length)))} seconds\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Time taken: {round(time.time()-T0,2)} seconds\n")
