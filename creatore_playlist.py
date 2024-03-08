@@ -4,6 +4,7 @@ from pydub import AudioSegment
 from datetime import timedelta
 
 volume_change = -15
+bitrate = 128
 
 def normalize_audio(audio_segment):
     # Normalize audio volume to -20 dBFS
@@ -26,7 +27,7 @@ def generate_output_filename(output_folder, output_file):
             return new_filename
         index += 1
 
-def create_log_file(output_folder, output_file, filenames,timestamps, total_length, T0):
+def create_log_file(output_folder, output_file, filenames,timestamps, total_length, T0, folders):
     # Generate log file path
     log_filename = os.path.splitext(output_file)[0] + ".txt"
     log_file_path = os.path.join(output_folder, log_filename)
@@ -36,14 +37,23 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write("Files added to the final track:\n")
         n = 0
         for filename in filenames:
-            log_file.write(f"- {filename} | {str(timedelta(seconds=round(total_length)))}\n")
-            n+=1
+            try:
+                for folder, num in folders:
+                    if num == n:
+                        log_file.write(f"\n\n{os.path.basename(folder)}:\n")
+                log_file.write(f"{n+1} - {filename} | {str(timedelta(seconds=round(timestamps[n])))}\n")
+                n+=1
+            except UnicodeEncodeError:
+                log_file.write("file name could not be written\n")
 
-        log_file.write(f"\nVolume Change: {volume_change}\n")
-        log_file.write(f"Total Length of Track: {str(timedelta(seconds=round(total_length)))} seconds\n")
+        
+        log_file.write(f"\n\nTotal Length of Track: {str(timedelta(seconds=round(total_length)))} seconds\n")
+        log_file.write(f"Number of tracks: {len(timestamps)}\n\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
+        log_file.write(f"\nVolume Change: {volume_change}\n")
+        log_file.write(f"Bitrate {bitrate} kbps\n\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        log_file.write(f"Time taken: {round(time.time()-T0,2)} seconds\n")
+        log_file.write(f"Time taken for mixing: {round(time.time()-T0,2)} seconds\n")
 
 def stitch_audio_in_folders(root_folder, output_folder, output_file):
     t0 = time.time()
@@ -52,23 +62,26 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
 
     # Initialize an empty list to store filenames for logging
     filenames = []
+    folders = []        #list of folders and the track they start at
 
     # Initialize variable to store total length of track
     total_length = 0
+    n_file = 0
     timestamps_l = []
     # Iterate through all subfolders in the root folder
     for foldername, _, filenames_list in os.walk(root_folder):
         # Exclude the output folder from the stitching process
         if foldername == output_folder:
             continue
-
+        
+        folders.append([foldername, n_file])
         # Initialize an empty list to store audio files in the same folder
         folder_audio = []
 
         # Iterate through all files in the folder
         for filename in filenames_list:
             print(f"adding: '{filename}' ")
-
+            n_file += 1
             if filename.endswith('.mp3'):
                 # Load and normalize .mp3 files
                 audio_path = os.path.join(foldername, filename)
@@ -110,10 +123,11 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # Export the final audio to the unique output filename in the output folder
     os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, unique_output_file)
-    final_audio.export(output_path, format="mp3", bitrate="320k")  # Adjust bitrate as needed
+    final_audio.export(output_path, format="mp3", bitrate=f'{bitrate}k')  # Adjust bitrate as needed
     print('logging')
     # Create a log file with the filenames of the files added to the final track
-    create_log_file(output_folder, unique_output_file, filenames, timestamps_l,total_length, t0)
+    folders.pop(0)
+    create_log_file(output_folder, unique_output_file, filenames, timestamps_l,total_length, t0, folders)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
 # Example usage
