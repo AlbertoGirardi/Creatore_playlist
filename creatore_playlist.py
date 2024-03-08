@@ -35,18 +35,22 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
     # Write filenames and additional information to the log file
     with open(log_file_path, 'w') as log_file:
         log_file.write("Files added to the final track:\n")
+        last_section_length = 0
+        last_section_lengthp = 0
+
         n = 0
         for filename in filenames:
             try:
                 for folder, num in folders:
                     if num == n:
-                        log_file.write(f"\n\n{os.path.basename(folder)}:\n")
-                log_file.write(f"{n+1} - {filename} | {str(timedelta(seconds=round(timestamps[n])))}\n")
+                        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))} \n\n\n{os.path.basename(folder)}:\n\n")
+                        last_section_length = last_section_lengthp
+                log_file.write(f"{n+1} - {str(timedelta(seconds=round(timestamps[n])))} | {filename}\n")
+                last_section_lengthp = round(timestamps[n])
                 n+=1
             except UnicodeEncodeError:
                 log_file.write("file name could not be written\n")
 
-        
         log_file.write(f"\n\nTotal Length of Track: {str(timedelta(seconds=round(total_length)))} seconds\n")
         log_file.write(f"Number of tracks: {len(timestamps)}\n\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
@@ -54,6 +58,12 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write(f"Bitrate {bitrate} kbps\n\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Time taken for mixing: {round(time.time()-T0,2)} seconds\n")
+
+
+    #logging to the list of all tracks made
+        
+    with open(os.path.join(output_folder, 'MASTER_OUTPUT_LOG.txt'), 'w' ) as logg_file:
+        logg_file.write(f"{output_file}\t{time.strftime('%Y-%m-%d %H:%M')}\t{str(timedelta(seconds=round(total_length)))}\t\t{len(timestamps)} tracks\n")
 
 def stitch_audio_in_folders(root_folder, output_folder, output_file):
     t0 = time.time()
