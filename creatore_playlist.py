@@ -37,32 +37,36 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write("Files added to the final track:\n")
         last_section_length = 0
         last_section_lengthp = 0
-
+        log_file.write(f"origin folder:")
         n = 0
+        timestamps.insert(0, 0)
         for filename in filenames:
             try:
                 for folder, num in folders:
                     if num == n:
-                        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))} \n\n\n{os.path.basename(folder)}:\n\n")
+                        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))} \n\n\n\n{os.path.basename(folder.upper())}:\n\n")
                         last_section_length = last_section_lengthp
-                log_file.write(f"{n+1} - {str(timedelta(seconds=round(timestamps[n])))} | {filename}\n")
+                log_file.write(f"{n+1} -\t {str(timedelta(seconds=round(timestamps[n])))}\t|  {filename}\n")
                 last_section_lengthp = round(timestamps[n])
                 n+=1
             except UnicodeEncodeError:
                 log_file.write("file name could not be written\n")
 
-        log_file.write(f"\n\nTotal Length of Track: {str(timedelta(seconds=round(total_length)))} seconds\n")
+        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))}")
+        log_file.write(f"\n\n------------------------------------------------------------------\n")
+        log_file.write(f"\n\n\nTotal Length of the Track: {str(timedelta(seconds=round(total_length)))}\n")
         log_file.write(f"Number of tracks: {len(timestamps)}\n\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
+        log_file.write(f"Avarage track lenght: {str(timedelta(seconds=round(total_length/(len(timestamps)))))}\n")
         log_file.write(f"\nVolume Change: {volume_change}\n")
-        log_file.write(f"Bitrate {bitrate} kbps\n\n")
+        log_file.write(f"Bitrate: {bitrate} kbps\n\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write(f"Time taken for mixing: {round(time.time()-T0,2)} seconds\n")
 
 
     #logging to the list of all tracks made
         
-    with open(os.path.join(output_folder, 'MASTER_OUTPUT_LOG.txt'), 'w' ) as logg_file:
+    with open(os.path.join(output_folder, 'MASTER_OUTPUT_LOG.txt'), 'a' ) as logg_file:
         logg_file.write(f"{output_file}\t{time.strftime('%Y-%m-%d %H:%M')}\t{str(timedelta(seconds=round(total_length)))}\t\t{len(timestamps)} tracks\n")
 
 def stitch_audio_in_folders(root_folder, output_folder, output_file):
@@ -111,6 +115,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
                 total_length += audio_segment.duration_seconds
 
             timestamps_l.append(total_length)
+            # print(total_length)
 
         # Concatenate all audio files in the same folder
         if folder_audio:
@@ -138,6 +143,8 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # Create a log file with the filenames of the files added to the final track
     folders.pop(0)
     create_log_file(output_folder, unique_output_file, filenames, timestamps_l,total_length, t0, folders)
+    # print(timestamps_l)
+    # print(filenames)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
 # Example usage
@@ -146,3 +153,4 @@ output_folder = root_folder + "\\#OUTPUT"
 output_file = "MegaMIX_Alberto_Girardi.mp3"
 stitch_audio_in_folders(root_folder, output_folder, output_file)
 print("FINISHED!!!")
+    
