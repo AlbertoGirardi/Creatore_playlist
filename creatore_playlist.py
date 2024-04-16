@@ -55,7 +55,7 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))}")
         log_file.write(f"\n\n------------------------------------------------------------------\n")
         log_file.write(f"\n\n\nTotal Length of the Track: {str(timedelta(seconds=round(total_length)))}\n")
-        log_file.write(f"Number of tracks: {len(timestamps)}\n\n")
+        log_file.write(f"Number of tracks: {len(timestamps)-1}\n\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
         log_file.write(f"Avarage track lenght: {str(timedelta(seconds=round(total_length/(len(timestamps)))))}\n")
         log_file.write(f"\nVolume Change: {volume_change}\n")
@@ -67,13 +67,14 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
     #logging to the list of all tracks made
         
     with open(os.path.join(output_folder, 'MASTER_OUTPUT_LOG.txt'), 'a' ) as logg_file:
-        logg_file.write(f"{output_file}\t{time.strftime('%Y-%m-%d %H:%M')}\t{str(timedelta(seconds=round(total_length)))}\t\t{len(timestamps)} tracks\n")
+        logg_file.write(f"{output_file}\t{time.strftime('%Y-%m-%d %H:%M')}\t{str(timedelta(seconds=round(total_length)))}\t\t{len(timestamps)-1} tracks\n")
 
 def stitch_audio_in_folders(root_folder, output_folder, output_file):
     t0 = time.time()
     # Initialize an empty list to store audio segments
-    audio_segments = []
 
+
+    final_audio = AudioSegment.empty()
     # Initialize an empty list to store filenames for logging
     filenames = []
     folders = []        #list of folders and the track they start at
@@ -88,6 +89,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
         if foldername == output_folder:
             continue
         
+        concatenated_audio = AudioSegment.empty()
         folders.append([foldername, n_file])
         # Initialize an empty list to store audio files in the same folder
         folder_audio = []
@@ -101,32 +103,35 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
                 audio_path = os.path.join(foldername, filename)
                 audio_segment = AudioSegment.from_mp3(audio_path)
                 normalized_audio = normalize_audio(audio_segment)
-                folder_audio.append(normalized_audio)
+                # folder_audio.append(normalized_audio)
                 filenames.append(filename)
                 total_length += audio_segment.duration_seconds
+                concatenated_audio += normalized_audio
             elif filename.endswith('.m4a'):
                 # Load .m4a files, convert to .mp3, and normalize
                 audio_path = os.path.join(foldername, filename)
                 audio_segment = AudioSegment.from_file(audio_path, format="m4a")
                 mp3_audio = convert_to_mp3(audio_segment)
                 normalized_audio = normalize_audio(mp3_audio)
-                folder_audio.append(normalized_audio)
+            #    // folder_audio.append(normalized_audio)
                 filenames.append(filename)
                 total_length += audio_segment.duration_seconds
+                concatenated_audio += normalized_audio
+
 
             timestamps_l.append(total_length)
             # print(total_length)
 
         # Concatenate all audio files in the same folder
-        if folder_audio:
-            concatenated_audio = sum(folder_audio)
+        
+            # concatenated_audio = sum(folder_audio)
 
             # Append the concatenated audio to the audio_segments list
-            audio_segments.append(concatenated_audio)
-
+        final_audio += concatenated_audio
+    del folder_audio
     print("\n\nJOINING FILES...")
     # Concatenate all audio segments from different folders
-    final_audio = sum(audio_segments)
+    
 
     # Lower the volume of the final audio track (if needed)
     final_audio = final_audio + volume_change  # Adjust the volume level as needed
