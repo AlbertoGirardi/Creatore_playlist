@@ -148,9 +148,9 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
 
 
     # stich together all the files
-    final_output_file = os.path.join(output_folder, generate_output_filename(output_folder, output_file))
+    final_output_file = generate_output_filename(output_folder, output_file)
     print(final_output_file)
-    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {final_output_file}"
+    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {os.path.join(output_folder, final_output_file )}"
     print(ffmpeg_command)
     os.chdir(output_foldertmp)
     mixing  = subprocess.run(ffmpeg_command, shell=True,capture_output=True, text=True)
