@@ -50,7 +50,7 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
                         log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))} \n\n\n\n{os.path.basename(folder.upper())}:\n\n")
                         last_section_length = last_section_lengthp
                 log_file.write(f"{n+1} -\t {str(timedelta(seconds=round(timestamps[n])))}\t|  {filename}\n")
-                last_section_lengthp = round(timestamps[n])
+                last_section_lengthp = round(timestamps[n+1])
                 n+=1
             except UnicodeEncodeError:
                 log_file.write("file name could not be written\n")
@@ -89,12 +89,15 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     n_file = 0
     timestamps_l = []
     # Iterate through all subfolders in the root folder
+
+
     for foldername, _, filenames_list in os.walk(root_folder):
         # print(filenames_list)
         # Exclude the output folder from the stitching process
         if foldername == output_folder or foldername == output_foldertmp or (not filenames_list):
             continue
         
+        print(f"\n\nProcessing:\t{foldername}\n")
         folders.append([foldername, n_file])
         # Initialize an empty list to store audio files in the same folder
         final_audio = AudioSegment.empty()
@@ -127,16 +130,14 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
             # print(total_length)
         
 
-        print("\n\nJOINING FILES...")
+        print("\nJOINING FILES...")
         #iterate over each folder
-        
-
         # Lower the volume of the final audio track (if needed)
         final_audio = final_audio + volume_change  # Adjust the volume level as needed
 
         # Generate a unique output filename
         unique_output_file = generate_output_filename(output_foldertmp, foldername+'.mp3')
-        print("\n\nEXPORTING...")
+        print("EXPORTING subfile...")
 
         # Export the final audio to the unique output filename in the output folder
         os.makedirs(output_foldertmp, exist_ok=True)
@@ -145,16 +146,20 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
 
         with open(os.path.join(output_foldertmp, ffmpeg_instruction), 'a') as ffmpeg_file:
             ffmpeg_file.write(f"file '{unique_output_file}'\n")
+        print("subfolder DONE")
 
 
     # stich together all the files
+    print("\n\nSTICHING ALL FILES TOGETHER...")
     final_output_file = generate_output_filename(output_folder, output_file)
-    print(final_output_file)
-    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {os.path.join(output_folder, final_output_file )}"
-    print(ffmpeg_command)
+    final_output_filepath = os.path.join(output_folder, final_output_file )
+    print("\noutput file:\t",final_output_filepath)
+    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {final_output_filepath}"
+    # print(ffmpeg_command)
     os.chdir(output_foldertmp)
     mixing  = subprocess.run(ffmpeg_command, shell=True,capture_output=True, text=True)
     print(mixing.stdout)
+    print("DONE!\n\n")
     print('logging')
     # Create a log file with the filenames of the files added to the final track
     create_log_file(output_folder, final_output_file, filenames, timestamps_l,total_length, t0, folders)
@@ -163,7 +168,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
 # root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
-root_folder = "C:\\Users\\alber\\Music\\test"
+root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
 
 output_folder = root_folder + "\\#OUTPUT"
 output_file = "MegaMIX_Alberto_Girardi.mp3"
