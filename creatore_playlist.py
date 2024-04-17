@@ -167,8 +167,8 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # print(filenames)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
-# root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
-root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
+root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
+#root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
 
 output_folder = root_folder + "\\#OUTPUT"
 output_file = "MegaMIX_Alberto_Girardi.mp3"
