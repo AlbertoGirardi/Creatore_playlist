@@ -7,6 +7,7 @@ import shutil
 
 volume_change = -15
 bitrate = 128
+sampling = 44100
 
 def normalize_audio(audio_segment):
     # Normalize audio volume to -20 dBFS
@@ -109,6 +110,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
                 # Load and normalize .mp3 files
                 audio_path = os.path.join(foldername, filename)
                 audio_segment = AudioSegment.from_mp3(audio_path)
+                audio_segment = audio_segment.set_frame_rate(sampling)
                 normalized_audio = normalize_audio(audio_segment)
                 # folder_audio.append(normalized_audio)
                 filenames.append(filename)
@@ -118,6 +120,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
                 # Load .m4a files, convert to .mp3, and normalize
                 audio_path = os.path.join(foldername, filename)
                 audio_segment = AudioSegment.from_file(audio_path, format="m4a")
+                audio_segment = audio_segment.set_frame_rate(sampling)
                 mp3_audio = convert_to_mp3(audio_segment)
                 normalized_audio = normalize_audio(mp3_audio)
             #    // folder_audio.append(normalized_audio)
@@ -134,6 +137,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
         #iterate over each folder
         # Lower the volume of the final audio track (if needed)
         final_audio = final_audio + volume_change  # Adjust the volume level as needed
+        final_audio = final_audio.set_frame_rate(sampling)
 
         # Generate a unique output filename
         unique_output_file = generate_output_filename(output_foldertmp, foldername+'.mp3')
@@ -177,6 +181,6 @@ ffmpeg_instruction = "ffmpeg_concat.txt"
 
 stitch_audio_in_folders(root_folder, output_folder, output_file)
 os.chdir(root_folder)
-shutil.rmtree(output_foldertmp)
+# shutil.rmtree(output_foldertmp)
 print("FINISHED!!!")
     
