@@ -10,6 +10,20 @@ volume_change = -15
 bitrate = 128
 sampling = 44100
 
+def extract_after_marker(s):
+    # Define the regex pattern to match the "!#[number]#" THAT IS THE WAY TO ORDER THE FOLDERS
+    pattern = r"^!#\d+#"
+    
+    # Use re.match to check if the string starts with the pattern
+    match = re.match(pattern, s)
+    
+    if match:
+        # If there's a match, return the substring after the matched pattern
+        return s[match.end():]
+    else:
+        # If there's no match, return the original string
+        return s
+
 def normalize_audio(audio_segment):
     # Normalize audio volume to -20 dBFS
     normalized_audio = audio_segment.normalize(headroom=0.1)
@@ -64,7 +78,12 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
             try:
                 for folder, num in folders:
                     if num == n:
-                        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))} \n\n\n\n{os.path.basename(folder.upper())}:\n\n")
+                        folder_oname = os.path.basename(folder.upper())
+                        
+                        section_time = (last_section_lengthp-last_section_length)
+                        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total")
+                        log_file.write(f"\n\n\n\n{extract_after_marker(folder_oname)}:\n\n")
+
                         last_section_length = last_section_lengthp
                 log_file.write(f"{n+1} -\t {str(timedelta(seconds=round(timestamps[n])))}\t|  {filename}\n")
                 last_section_lengthp = round(timestamps[n+1])
@@ -72,7 +91,10 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
             except UnicodeEncodeError:
                 log_file.write("file name could not be written\n")
 
-        log_file.write(f"\nSection total time: {str(timedelta(seconds=(last_section_lengthp-last_section_length)))}")
+
+        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total ")
+        
+
         log_file.write(f"\n\n------------------------------------------------------------------\n")
         log_file.write(f"\n\n\nTotal Length of the Track: {str(timedelta(seconds=round(total_length)))}\n")
         log_file.write(f"Number of tracks: {len(timestamps)-1}\n\n")
@@ -169,15 +191,15 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
 
         # Generate a unique output filename
         os.makedirs(output_foldertmp, exist_ok=True)
-        print(output_foldertmp, foldername)
+        # print(output_foldertmp, foldername)
         unique_output_file = generate_output_filename(output_foldertmp, foldername+'.mp3')
         print("EXPORTING subfile...")
 
         # Export the final audio to the unique output filename in the output folder
-        print(unique_output_file)
+        # print(unique_output_file)
        
         output_path = os.path.join(output_foldertmp, unique_output_file)
-        print(output_path)
+        # print(output_path)
         final_audio.export(output_path, format="mp3", bitrate=f'{bitrate}k')  # Adjust bitrate as needed
 
         with open(os.path.join(output_foldertmp, ffmpeg_instruction), 'a') as ffmpeg_file:
