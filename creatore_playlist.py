@@ -4,6 +4,7 @@ from pydub import AudioSegment
 from datetime import timedelta
 import subprocess
 import shutil
+import re
 
 volume_change = -15
 bitrate = 128
@@ -19,16 +20,31 @@ def convert_to_mp3(audio_segment):
     mp3_audio = audio_segment.export(format="mp3")
     return AudioSegment.from_mp3(mp3_audio)
 
+
 def generate_output_filename(output_folder, output_file):
-    # Check if the output filename already exists in the output directory
-    filename, ext = os.path.splitext(output_file)
-    base_filename = os.path.basename(filename)
-    index = 1
-    while True:
-        new_filename = f"{base_filename}_{index}{ext}"
-        if not os.path.exists(os.path.join(output_folder, new_filename)):
-            return new_filename
-        index += 1
+    # Extract the file name from the given path
+    file_name = os.path.basename(output_file)
+    base_name, ext = os.path.splitext(file_name)
+    
+    # Regex to match files with the pattern base_name + '_' + number + ext
+    pattern = re.compile(rf'^{re.escape(base_name)}_(\d+){re.escape(ext)}$')
+    
+    max_number = 0
+    
+    # Iterate over all files in the output_folder
+    for filename in os.listdir(output_folder):
+        match = pattern.match(filename)
+        if match:
+            number = int(match.group(1))
+            if number > max_number:
+                max_number = number
+    
+    # The new version number is max_number + 1
+    new_version_number = max_number + 1
+    new_filename = f"{base_name}_{new_version_number}{ext}"
+    
+    return new_filename
+
 
 def create_log_file(output_folder, output_file, filenames,timestamps, total_length, T0, folders):
     # Generate log file path
@@ -128,6 +144,18 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
                 total_length += audio_segment.duration_seconds
                 final_audio += normalized_audio
 
+            elif filename.endswith('.ogg'):
+                # Load .ogg files, convert to .mp3, and normalize
+                audio_path = os.path.join(foldername, filename)
+                audio_segment = AudioSegment.from_file(audio_path, format="ogg")
+                audio_segment = audio_segment.set_frame_rate(sampling)
+                mp3_audio = convert_to_mp3(audio_segment)
+                normalized_audio = normalize_audio(mp3_audio)
+            #    // folder_audio.append(normalized_audio)
+                filenames.append(filename)
+                total_length += audio_segment.duration_seconds
+                final_audio += normalized_audio
+
 
             timestamps_l.append(total_length)
             # print(total_length)
@@ -140,12 +168,16 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
         final_audio = final_audio.set_frame_rate(sampling)
 
         # Generate a unique output filename
+        os.makedirs(output_foldertmp, exist_ok=True)
+        print(output_foldertmp, foldername)
         unique_output_file = generate_output_filename(output_foldertmp, foldername+'.mp3')
         print("EXPORTING subfile...")
 
         # Export the final audio to the unique output filename in the output folder
-        os.makedirs(output_foldertmp, exist_ok=True)
+        print(unique_output_file)
+       
         output_path = os.path.join(output_foldertmp, unique_output_file)
+        print(output_path)
         final_audio.export(output_path, format="mp3", bitrate=f'{bitrate}k')  # Adjust bitrate as needed
 
         with open(os.path.join(output_foldertmp, ffmpeg_instruction), 'a') as ffmpeg_file:
@@ -171,8 +203,8 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # print(filenames)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
-root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
-#root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
+# root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
+root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
 
 output_folder = root_folder + "\\#OUTPUT"
 output_file = "MegaMIX_Alberto_Girardi.mp3"
@@ -181,6 +213,6 @@ ffmpeg_instruction = "ffmpeg_concat.txt"
 
 stitch_audio_in_folders(root_folder, output_folder, output_file)
 os.chdir(root_folder)
-# shutil.rmtree(output_foldertmp)
+shutil.rmtree(output_foldertmp)
 print("FINISHED!!!")
     
