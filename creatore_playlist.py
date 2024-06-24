@@ -1,6 +1,7 @@
 import os
 import time
 from pydub import AudioSegment
+from pydub.effects import compress_dynamic_range
 from datetime import timedelta
 import subprocess
 import shutil
@@ -74,25 +75,30 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write(f"origin folder:\n")
         n = 0
         timestamps.insert(0, 0)
+        i = 0
         for filename in filenames:
             try:
+                
                 for folder, num in folders:
                     if num == n:
                         folder_oname = os.path.basename(folder.upper())
                         
                         section_time = (last_section_lengthp-last_section_length)
-                        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total")
+                        # section_n_tracks = folders[i+1][1] -  folders[i][1]
+                        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total time\n")
+                        # log_file.write(f"Section n° of tracks: {section_n_tracks}\n")
                         log_file.write(f"\n\n\n\n{extract_after_marker(folder_oname)}:\n\n")
 
                         last_section_length = last_section_lengthp
+                        i+=1
                 log_file.write(f"{n+1} -\t {str(timedelta(seconds=round(timestamps[n])))}\t|  {filename}\n")
                 last_section_lengthp = round(timestamps[n+1])
                 n+=1
             except UnicodeEncodeError:
                 log_file.write("file name could not be written\n")
 
-
-        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total ")
+        section_time = (last_section_lengthp-last_section_length)
+        log_file.write(f"\nSection total time: {str(timedelta(seconds=section_time))} | {round(100*section_time/total_length,2)}% of total time ")
         
 
         log_file.write(f"\n\n------------------------------------------------------------------\n")
@@ -186,6 +192,9 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
         print("\nJOINING FILES...")
         #iterate over each folder
         # Lower the volume of the final audio track (if needed)
+        print("compressing dynamic range")
+        final_audio = compress_dynamic_range(final_audio)
+        print("volume and sampling adjustment...")
         final_audio = final_audio + volume_change  # Adjust the volume level as needed
         final_audio = final_audio.set_frame_rate(sampling)
 
