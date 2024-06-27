@@ -28,7 +28,7 @@ def extract_after_marker(s):
 def normalize_audio(audio_segment):
     # Normalize audio volume to -20 dBFS
     normalized_audio = audio_segment.normalize(headroom=0.1)
-    return normalized_audio
+    return normalized_audio.set_channels(1)
 
 def convert_to_mp3(audio_segment):
     # Convert audio segment to mp3 format
@@ -192,8 +192,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
         print("\nJOINING FILES...")
         #iterate over each folder
         # Lower the volume of the final audio track (if needed)
-        print("compressing dynamic range")
-        final_audio = compress_dynamic_range(final_audio)
+        
         print("volume and sampling adjustment...")
         final_audio = final_audio + volume_change  # Adjust the volume level as needed
         final_audio = final_audio.set_frame_rate(sampling)
@@ -220,12 +219,22 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     print("\n\nSTICHING ALL FILES TOGETHER...")
     final_output_file = generate_output_filename(output_folder, output_file)
     final_output_filepath = os.path.join(output_folder, final_output_file )
+    final_x_output_filepath = os.path.join(output_foldertmp, final_output_file )
     print("\noutput file:\t",final_output_filepath)
-    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {final_output_filepath}"
+    ffmpeg_command = f"ffmpeg -f concat -safe 0 -i {ffmpeg_instruction} -c copy {final_x_output_filepath}"
     # print(ffmpeg_command)
     os.chdir(output_foldertmp)
     mixing  = subprocess.run(ffmpeg_command, shell=True,capture_output=True, text=True)
     print(mixing.stdout)
+        # Apply dynamic range compression using ffmpeg
+    print("COMPRESSING dynamic range...")
+    subprocess.run([
+        "ffmpeg",
+        "-i", final_x_output_filepath,
+        "-af", "acompressor=threshold=0.03:ratio=10:attack=50:release=200",
+        "-b:a", "128k",  # Set the audio bitrate to 128 kbps
+        final_output_filepath
+    ])
     print("DONE!\n\n")
     print('logging')
     # Create a log file with the filenames of the files added to the final track
@@ -234,7 +243,7 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # print(filenames)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
-# root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
+#root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
 root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
 
 output_folder = root_folder + "\\#OUTPUT"
