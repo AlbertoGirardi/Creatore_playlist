@@ -105,7 +105,7 @@ def create_log_file(output_folder, output_file, filenames,timestamps, total_leng
         log_file.write(f"\n\n\nTotal Length of the Track: {str(timedelta(seconds=round(total_length)))}\n")
         log_file.write(f"Number of tracks: {len(timestamps)-1}\n\n")
         log_file.write(f"Total Size of Track: {round(os.path.getsize(os.path.join(output_folder, output_file)) / (1024 * 1024), 2)} MB\n")
-        log_file.write(f"Avarage track lenght: {str(timedelta(seconds=round(total_length/(len(timestamps)))))}\n")
+        log_file.write(f"Average track length: {str(timedelta(seconds=round(total_length/(len(timestamps)))))}\n")
         log_file.write(f"\nVolume Change: {volume_change}\n")
         log_file.write(f"Bitrate: {bitrate} kbps\n\n")
         log_file.write(f"Date of Generation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -243,8 +243,8 @@ def stitch_audio_in_folders(root_folder, output_folder, output_file):
     # print(filenames)
     print(f"\n\nTime:{round(time.time()-t0,2)}\n")
 
-#root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
-root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
+root_folder = "C:\\Users\\alber\\Music\\MEGAMIX"
+#root_folder = "C:\\Users\\alber\\Music\\test"             ####FOR TESTING
 
 output_folder = root_folder + "\\#OUTPUT"
 output_file = "MegaMIX_Alberto_Girardi.mp3"
