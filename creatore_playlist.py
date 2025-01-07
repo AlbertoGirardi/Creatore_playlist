@@ -11,6 +11,10 @@ volume_change = -15
 bitrate = 128
 sampling = 44100
 
+
+#da problemi con alcuni file mp3 di cui non è specificata la bitrate, usare programma apposito
+
+
 def extract_after_marker(s):
     # Define the regex pattern to match the "!#[number]#" THAT IS THE WAY TO ORDER THE FOLDERS
     pattern = r"^!#\d+#"
