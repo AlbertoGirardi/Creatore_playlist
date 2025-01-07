@@ -1,0 +1,20 @@
+import re
+
+def extract_after_marker(s):
+    # Define the regex pattern to match the "!#[number]#"
+    pattern = r"^!#\d+#"
+    
+    # Use re.match to check if the string starts with the pattern
+    match = re.match(pattern, s)
+    
+    if match:
+        # If there's a match, return the substring after the matched pattern
+        return s[match.end():]
+    else:
+        # If there's no match, return the original string
+        return s
+
+# Example usage:
+example_string = "!#123#This is a test string."
+result = extract_after_marker(example_string)
+print(result)  # Output: This is a test string.
